@@ -51,6 +51,13 @@
   <ItemGroup>
     <Compile Include="MidiToKeyboard.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="src\Application\IKeyOutput.cs" />
+    <Compile Include="src\Application\IMidiInput.cs" />
+    <Compile Include="src\Application\IProfileRepository.cs" />
+    <Compile Include="src\Application\MidiDeviceInfo.cs" />
+    <Compile Include="src\Domain\KeyAction.cs" />
+    <Compile Include="src\Domain\MidiEvent.cs" />
+    <Compile Include="src\Domain\Profile.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -58,6 +65,10 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="src\Infrastructure\" />
+    <Folder Include="src\Ui\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Melanchall.DryWetMidi.8.0.2\build\Melanchall.DryWetMidi.targets" Condition="Exists('..\packages\Melanchall.DryWetMidi.8.0.2\build\Melanchall.DryWetMidi.targets')" />
