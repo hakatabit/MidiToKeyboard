@@ -61,6 +61,7 @@
     <Compile Include="src\Domain\MidiTranslator.cs" />
     <Compile Include="src\Domain\Profile.cs" />
     <Compile Include="src\Infrastructure\DryWetMidiInput.cs" />
+    <Compile Include="src\Infrastructure\JsonProfileRepository.cs" />
     <Compile Include="src\Infrastructure\NativeMethods.cs" />
     <Compile Include="src\Infrastructure\WindowsKeyOutput.cs" />
   </ItemGroup>
