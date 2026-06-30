@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace MidiToKeyboard.Application
 {
-    public sealed class MidiToKeyboard
+    public sealed class MidiToKeyboardApplication
     {
         private readonly object _syncRoot = new object();
         private readonly IMidiInput _midiInput;
@@ -16,7 +16,7 @@ namespace MidiToKeyboard.Application
         private global::MidiToKeyboard.Domain.MidiTranslator _midiTranslator;
         private bool _isStarted;
 
-        public MidiToKeyboard(
+        public MidiToKeyboardApplication(
             IMidiInput midiInput,
             IKeyOutput keyOutput,
             IProfileRepository profileRepository)
