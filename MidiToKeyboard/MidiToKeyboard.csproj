@@ -54,6 +54,7 @@
     <Compile Include="src\Application\IKeyOutput.cs" />
     <Compile Include="src\Application\IMidiInput.cs" />
     <Compile Include="src\Application\IProfileRepository.cs" />
+    <Compile Include="src\Application\MidiToKeyboard.cs" />
     <Compile Include="src\Application\MidiDeviceInfo.cs" />
     <Compile Include="src\Domain\KeyAction.cs" />
     <Compile Include="src\Domain\KeyPressState.cs" />
