@@ -65,6 +65,7 @@
     <Compile Include="src\Infrastructure\JsonProfileRepository.cs" />
     <Compile Include="src\Infrastructure\NativeMethods.cs" />
     <Compile Include="src\Infrastructure\WindowsKeyOutput.cs" />
+    <Compile Include="src\Ui\ConsoleUi.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
