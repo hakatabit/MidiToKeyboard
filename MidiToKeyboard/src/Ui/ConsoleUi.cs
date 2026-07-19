@@ -4,9 +4,9 @@ namespace MidiToKeyboard.Ui
 {
     public sealed class ConsoleUi
     {
-        private readonly global::MidiToKeyboard.Application.MidiToKeyboardApplication _application;
+        private readonly MidiToKeyboard.Application.MidiToKeyboardApplication _application;
 
-        public ConsoleUi(global::MidiToKeyboard.Application.MidiToKeyboardApplication application)
+        public ConsoleUi(MidiToKeyboard.Application.MidiToKeyboardApplication application)
         {
             if (application == null)
                 throw new ArgumentNullException(nameof(application));

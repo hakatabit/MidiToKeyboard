@@ -12,7 +12,7 @@ namespace MidiToKeyboard
     /// <summary>
     /// MIDI 入力をキーボード入力に変換して送信するコンソールアプリケーションのメインクラス
     /// </summary>
-    class MidiToKeyboard
+    internal static class Program
     {
         #region 入力モード用変数
 
@@ -67,7 +67,7 @@ namespace MidiToKeyboard
 
         #endregion
 
-        static MidiToKeyboard()
+        static Program()
         {
             _keyOutput.WarningOccurred += OnKeyOutputWarningOccurred;
         }

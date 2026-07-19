@@ -11,9 +11,9 @@ namespace MidiToKeyboard.Application
         private readonly IKeyOutput _keyOutput;
         private readonly IProfileRepository _profileRepository;
 
-        private global::MidiToKeyboard.Domain.Profile _currentProfile;
-        private global::MidiToKeyboard.Domain.KeyPressState _keyPressState;
-        private global::MidiToKeyboard.Domain.MidiTranslator _midiTranslator;
+        private MidiToKeyboard.Domain.Profile _currentProfile;
+        private MidiToKeyboard.Domain.KeyPressState _keyPressState;
+        private MidiToKeyboard.Domain.MidiTranslator _midiTranslator;
         private bool _isStarted;
 
         public MidiToKeyboardApplication(
@@ -76,14 +76,14 @@ namespace MidiToKeyboard.Application
 
         public void SetProfile(string profileName)
         {
-            global::MidiToKeyboard.Domain.Profile profile = _profileRepository.Load(profileName);
+            MidiToKeyboard.Domain.Profile profile = _profileRepository.Load(profileName);
             if (profile == null)
                 throw new InvalidOperationException("Profile repository returned null.");
 
-            global::MidiToKeyboard.Domain.KeyPressState keyPressState =
-                new global::MidiToKeyboard.Domain.KeyPressState();
-            global::MidiToKeyboard.Domain.MidiTranslator midiTranslator =
-                new global::MidiToKeyboard.Domain.MidiTranslator(profile.NoteMappings, keyPressState);
+            MidiToKeyboard.Domain.KeyPressState keyPressState =
+                new MidiToKeyboard.Domain.KeyPressState();
+            MidiToKeyboard.Domain.MidiTranslator midiTranslator =
+                new MidiToKeyboard.Domain.MidiTranslator(profile.NoteMappings, keyPressState);
 
             lock (_syncRoot)
             {
@@ -93,9 +93,9 @@ namespace MidiToKeyboard.Application
             }
         }
 
-        private void OnMidiMessageReceived(global::MidiToKeyboard.Domain.MidiEvent midiEvent)
+        private void OnMidiMessageReceived(MidiToKeyboard.Domain.MidiEvent midiEvent)
         {
-            List<global::MidiToKeyboard.Domain.KeyAction> actions;
+            List<MidiToKeyboard.Domain.KeyAction> actions;
 
             lock (_syncRoot)
             {
@@ -105,7 +105,7 @@ namespace MidiToKeyboard.Application
                 actions = _midiTranslator.Translate(midiEvent).ToList();
             }
 
-            foreach (global::MidiToKeyboard.Domain.KeyAction action in actions)
+            foreach (MidiToKeyboard.Domain.KeyAction action in actions)
             {
                 _keyOutput.Send(action);
             }

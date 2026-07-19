@@ -2,6 +2,6 @@
 {
     public interface IKeyOutput
     {
-        void Send(global::MidiToKeyboard.Domain.KeyAction action);
+        void Send(MidiToKeyboard.Domain.KeyAction action);
     }
 }

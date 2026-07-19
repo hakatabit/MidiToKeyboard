@@ -5,7 +5,7 @@ namespace MidiToKeyboard.Application
 {
     public interface IMidiInput
     {
-        event Action<global::MidiToKeyboard.Domain.MidiEvent> MessageReceived;
+        event Action<MidiToKeyboard.Domain.MidiEvent> MessageReceived;
         IReadOnlyList<MidiDeviceInfo> EnumerateDevices();
         void Start(string deviceId);
         void Stop();

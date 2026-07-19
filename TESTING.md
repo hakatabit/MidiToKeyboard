@@ -14,7 +14,7 @@
 - WSL 上でのビルドや実行確認は前提にしない。
 - MIDI 入力確認には、Windows から認識できる MIDI 入力デバイスを用意する。
 - キー送出確認には、入力を受け取れるテキストエディタや対象アプリを用意する。
-- 旧ルートの `MidiToKeyboard.cs` には既存の console 実行経路が残っている。
+- 旧ルートの `Program.cs` には既存の console 実行経路が残っている。
 - 新しい `Application.MidiToKeyboardApplication` と `Ui.ConsoleUi` は追加済みだが、既存実行経路へ全面移行済みとは限らない。
 
 ## ビルド確認
@@ -89,11 +89,11 @@
 7. Ui が Console 入出力を担当していることを確認する。
 8. Ui が `KeyPressState` や `MidiTranslator` の内部状態管理へ過剰に踏み込んでいないことを確認する。
 9. `global::` が名前衝突回避に必要な箇所だけで使われていることを確認する。
-10. `namespace MidiToKeyboard` と `class MidiToKeyboard` の衝突が悪化していないことを確認する。
+10. `namespace MidiToKeyboard` とエントリポイントクラス名の衝突がないことを確認する。
 
 ## 既知の未対応事項
 
-- 旧ルート `MidiToKeyboard.cs` には既存処理が残っている。後続タスクで `Program` / `ConsoleUi` / Application 経由の構成へ整理予定。
+- 旧ルート `Program.cs` には既存処理が残っている。後続タスクで `ConsoleUi` / Application 経由の構成へ整理予定。
 - 新しい `Application.MidiToKeyboardApplication` / `Ui.ConsoleUi` は追加済みだが、既存実行経路へ全面移行済みではない可能性がある。Visual Studio 実行時にどの経路が起動しているか確認する。
 
 ## トラブルシュート
@@ -106,7 +106,8 @@
 
 ### namespace と class の名前衝突が疑われる場合
 
-- `namespace MidiToKeyboard` と `class MidiToKeyboard` が同名で存在するため、型解決で衝突する場合がある。
+- 旧エントリポイントが `class MidiToKeyboard` のまま残っていないか確認する。
+- `namespace MidiToKeyboard` と同名のクラスが存在すると、型解決で衝突する場合がある。
 - `MidiToKeyboard.Domain` や `MidiToKeyboard.Application` を参照する箇所で解決できない場合、`global::MidiToKeyboard...` が必要か確認する。
 - 不要な `global::` は増やさず、名前衝突を避けるために必要な箇所だけで使う。
 
