@@ -9,7 +9,51 @@ namespace MidiToKeyboard.Infrastructure
     {
         public void Send(KeyAction action)
         {
-            throw new NotImplementedException("KeyAction の本格実装は Task 8 で行います。");
+            if (action == null)
+            {
+                throw new ArgumentNullException(nameof(action));
+            }
+
+            switch (action.Type)
+            {
+                case KeyActionType.KeyDown:
+                    SendKeyInput(action.KeyChar, NativeMethods.KEYEVENTF_KEYDOWN);
+                    return;
+
+                case KeyActionType.KeyUp:
+                    SendKeyInput(action.KeyChar, NativeMethods.KEYEVENTF_KEYUP);
+                    return;
+
+                case KeyActionType.KeyPress:
+                    SendKeyInput(action.KeyChar, NativeMethods.KEYEVENTF_KEYDOWN);
+                    SendKeyInput(action.KeyChar, NativeMethods.KEYEVENTF_KEYUP);
+                    return;
+
+                case KeyActionType.UnicodeText:
+                    SendUnicodeText(action.Text);
+                    return;
+
+                case KeyActionType.ScanCode:
+                case KeyActionType.VirtualKey:
+                    throw new NotSupportedException("Unsupported KeyActionType: " + action.Type);
+
+                default:
+                    throw new NotSupportedException("Unsupported KeyActionType: " + action.Type);
+            }
+        }
+
+        private void SendUnicodeText(string text)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+
+            foreach (char keyChar in text)
+            {
+                SendUnicodeKey(keyChar, NativeMethods.KEYEVENTF_KEYDOWN);
+                SendUnicodeKey(keyChar, NativeMethods.KEYEVENTF_KEYUP);
+            }
         }
 
         /// <summary>
