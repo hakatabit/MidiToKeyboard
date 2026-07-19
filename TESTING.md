@@ -62,6 +62,8 @@
    - 両方のノートを離した時点で KeyUp 相当が送られること。
 8. 同じノートの重複 NoteOn / 重複 NoteOff で、不要な KeyDown / KeyUp が連続送出されないことを確認する。
 9. SendInput 失敗時の console 表示挙動が維持されていることを確認する。
+10. `WindowsKeyOutput.WarningOccurred` が購読されている経路では、SendInput 失敗通知が console に表示されることを確認する。
+11. `WindowsKeyOutput.WarningOccurred` が未購読の場合、失敗通知は表示されないが例外にはならないことを確認する。
 
 ## mappings.json / Profile 読み込み確認
 
@@ -91,8 +93,6 @@
 
 ## 既知の未対応事項
 
-- `WindowsKeyOutput.Send(KeyAction action)` は現時点で未実装。新しい Application 経由のキー送出経路を使用する前に実装が必要。
-- `WindowsKeyOutput` の `Console.WriteLine` は、現時点では SendInput 失敗時の既存表示挙動維持のため残っている。将来的には通知インターフェースやログ抽象へ分離する予定。
 - 旧ルート `MidiToKeyboard.cs` には既存処理が残っている。後続タスクで `Program` / `ConsoleUi` / Application 経由の構成へ整理予定。
 - 新しい `Application.MidiToKeyboardApplication` / `Ui.ConsoleUi` は追加済みだが、既存実行経路へ全面移行済みではない可能性がある。Visual Studio 実行時にどの経路が起動しているか確認する。
 
@@ -126,7 +126,8 @@
 
 ### SendInput が失敗する場合
 
-- console に `GetLastWin32Error` 付きのエラー表示が出ているか確認する。
+- 既存 Main 経路では、`WindowsKeyOutput.WarningOccurred` の購読により console に `GetLastWin32Error` 付きのエラー表示が出ているか確認する。
+- `WarningOccurred` が未購読の経路では、失敗通知は表示されないが例外にならないことを確認する。
 - 対象アプリが管理者権限で動いている場合、権限差により入力が届かない可能性を確認する。
 - 入力先ウィンドウにフォーカスがあるか確認する。
 - セキュリティソフトや OS の入力制限により SendInput がブロックされていないか確認する。

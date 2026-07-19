@@ -67,6 +67,11 @@ namespace MidiToKeyboard
 
         #endregion
 
+        static MidiToKeyboard()
+        {
+            _keyOutput.WarningOccurred += OnKeyOutputWarningOccurred;
+        }
+
         #region メイン処理
 
         private static InputDevice _midiDevice;
@@ -370,6 +375,11 @@ namespace MidiToKeyboard
             if (_currentMapping.TryGetValue(noteNumber, out char keyChar))
                 return keyChar;
             return '\0';
+        }
+
+        private static void OnKeyOutputWarningOccurred(object sender, string message)
+        {
+            Console.WriteLine(message);
         }
 
         #endregion

@@ -7,6 +7,8 @@ namespace MidiToKeyboard.Infrastructure
 {
     public sealed class WindowsKeyOutput : IKeyOutput
     {
+        public event EventHandler<string> WarningOccurred;
+
         public void Send(KeyAction action)
         {
             if (action == null)
@@ -39,6 +41,15 @@ namespace MidiToKeyboard.Infrastructure
 
                 default:
                     throw new NotSupportedException("Unsupported KeyActionType: " + action.Type);
+            }
+        }
+
+        private void OnWarningOccurred(string message)
+        {
+            EventHandler<string> handler = WarningOccurred;
+            if (handler != null)
+            {
+                handler(this, message);
             }
         }
 
@@ -126,7 +137,7 @@ namespace MidiToKeyboard.Infrastructure
             uint result = NativeMethods.SendInput(1, new NativeMethods.INPUT[] { input }, Marshal.SizeOf(typeof(NativeMethods.INPUT)));
             if (result == 0)
             {
-                Console.WriteLine($"[エラー] SendInput 失敗 GetLastWin32Error: {Marshal.GetLastWin32Error()}");
+                OnWarningOccurred($"[エラー] SendInput 失敗 GetLastWin32Error: {Marshal.GetLastWin32Error()}");
             }
         }
 
@@ -157,7 +168,7 @@ namespace MidiToKeyboard.Infrastructure
             uint result = NativeMethods.SendInput(1, new NativeMethods.INPUT[] { input }, Marshal.SizeOf(typeof(NativeMethods.INPUT)));
             if (result == 0)
             {
-                Console.WriteLine($"[エラー] Unicode SendInput 失敗 GetLastWin32Error: {Marshal.GetLastWin32Error()}");
+                OnWarningOccurred($"[エラー] Unicode SendInput 失敗 GetLastWin32Error: {Marshal.GetLastWin32Error()}");
             }
         }
 
@@ -245,7 +256,7 @@ namespace MidiToKeyboard.Infrastructure
             uint result = NativeMethods.SendInput(1, new NativeMethods.INPUT[] { input }, Marshal.SizeOf(typeof(NativeMethods.INPUT)));
             if (result == 0)
             {
-                Console.WriteLine($"[エラー] Scancode SendInput 失敗 GetLastWin32Error: {Marshal.GetLastWin32Error()}");
+                OnWarningOccurred($"[エラー] Scancode SendInput 失敗 GetLastWin32Error: {Marshal.GetLastWin32Error()}");
             }
         }
 
