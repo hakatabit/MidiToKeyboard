@@ -12,7 +12,6 @@ namespace MidiToKeyboard.Application
         private readonly IProfileRepository _profileRepository;
 
         private MidiToKeyboard.Domain.Profile _currentProfile;
-        private MidiToKeyboard.Domain.KeyPressState _keyPressState;
         private MidiToKeyboard.Domain.MidiTranslator _midiTranslator;
         private bool _isStarted;
 
@@ -87,7 +86,6 @@ namespace MidiToKeyboard.Application
                 }
 
                 _currentProfile = null;
-                _keyPressState = null;
                 _midiTranslator = null;
             }
         }
@@ -106,7 +104,6 @@ namespace MidiToKeyboard.Application
             lock (_syncRoot)
             {
                 _currentProfile = profile;
-                _keyPressState = keyPressState;
                 _midiTranslator = midiTranslator;
             }
         }
