@@ -1,6 +1,8 @@
 ﻿using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Multimedia;
+using MidiToKeyboard.Application;
 using MidiToKeyboard.Infrastructure;
+using MidiToKeyboard.Ui;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -74,8 +76,6 @@ namespace MidiToKeyboard
 
         #region メイン処理
 
-        private static InputDevice _midiDevice;
-
         /// <summary>
         /// アプリケーションのエントリポイント
         /// MIDI デバイス選択、入力モード選択を行い受信を開始する
@@ -85,68 +85,25 @@ namespace MidiToKeyboard
         {
             try
             {
-                // 利用可能なMIDIデバイスのリストを表示
-                var devices = InputDevice.GetAll().ToList();
-                Console.WriteLine("利用可能なMIDI入力デバイス:");
+                string mappingsPath = Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                    MappingFileName);
 
-                if (devices.Count == 0)
+                using (var midiInput = new DryWetMidiInput())
                 {
-                    Console.WriteLine("デバイスが見つかりませんでした。");
-                    return;
-                }
+                    var keyOutput = new WindowsKeyOutput();
+                    var profileRepository = new JsonProfileRepository(mappingsPath);
+                    var application = new MidiToKeyboardApplication(
+                        midiInput,
+                        keyOutput,
+                        profileRepository);
+                    var consoleUi = new ConsoleUi(
+                        application,
+                        midiInput,
+                        profileRepository);
 
-                for (int i = 0; i < devices.Count; i++)
-                {
-                    Console.WriteLine($"  [{i}]: {devices[i].Name}");
-                }
-
-                // ユーザーにデバイスを選択させる
-                Console.Write("使用するデバイスの番号を入力してください: ");
-                if (int.TryParse(Console.ReadLine(), out int deviceIndex) && deviceIndex >= 0 && deviceIndex < devices.Count)
-                {
-                    _midiDevice = devices[deviceIndex];
-
-                    // ユーザーに入力送信モードを選ばせる
-                    Console.WriteLine();
-                    Console.WriteLine("入力送信モードを選択してください:");
-                    Console.WriteLine("  [1] 仮想キーコード (VK) - 仮想キー＋修飾キーで送信");
-                    Console.WriteLine("  [2] スキャンコード (SC) - スキャンコードで送信（ゲーム等向け）");
-                    Console.Write("番号を入力: ");
-                    string modeInput = Console.ReadLine()?.Trim();
-                    if (modeInput == "2")
-                        _inputMode = InputMode.Scancode;
-                    else
-                        _inputMode = InputMode.VirtualKey;
-
-                    // マッピングセットのロードと選択
-                    LoadMappingSets();
-                    ChooseMappingSet();
-
-                    // MIDIイベントハンドラを設定
-                    _midiDevice.EventReceived += OnMidiEventReceived;
-
-                    // デバイスを開いて受信を開始
-                    _midiDevice.StartEventsListening();
-
-                    try
-                    {
-                        Console.WriteLine($"\n** '{_midiDevice.Name}' をリッスン中です。 **");
-                        Console.WriteLine($"選択モード: {(_inputMode == InputMode.Scancode ? "Scancode" : "VirtualKey")}");
-                        Console.WriteLine("MIDIノートオンイベントをキーボード押下に変換します。");
-                        Console.WriteLine("任意のキーを押すと終了します...");
-
-                        Console.ReadKey();
-                    }
-                    finally
-                    {
-                        // MIDI受信を停止して、デバイスを解放
-                        _midiDevice.StopEventsListening();
-                        _midiDevice.Dispose();
-                    }
-                }
-                else
-                {
-                    Console.WriteLine("無効な選択です。");
+                    keyOutput.WarningOccurred += OnKeyOutputWarningOccurred;
+                    consoleUi.Run();
                 }
             }
             catch (Exception ex)

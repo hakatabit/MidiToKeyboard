@@ -52,10 +52,13 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="src\Application\IKeyOutput.cs" />
+    <Compile Include="src\Application\IInputModeKeyOutput.cs" />
     <Compile Include="src\Application\IMidiInput.cs" />
     <Compile Include="src\Application\IProfileRepository.cs" />
+    <Compile Include="src\Application\InputMode.cs" />
     <Compile Include="src\Application\MidiToKeyboardApplication.cs" />
     <Compile Include="src\Application\MidiDeviceInfo.cs" />
+    <Compile Include="src\Application\MidiInputActivity.cs" />
     <Compile Include="src\Domain\KeyAction.cs" />
     <Compile Include="src\Domain\KeyPressState.cs" />
     <Compile Include="src\Domain\MidiEvent.cs" />

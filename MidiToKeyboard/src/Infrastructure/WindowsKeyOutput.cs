@@ -5,9 +5,21 @@ using System.Runtime.InteropServices;
 
 namespace MidiToKeyboard.Infrastructure
 {
-    public sealed class WindowsKeyOutput : IKeyOutput
+    public sealed class WindowsKeyOutput : IKeyOutput, IInputModeKeyOutput
     {
+        private InputMode _inputMode = InputMode.VirtualKey;
+
         public event EventHandler<string> WarningOccurred;
+
+        public void SetInputMode(InputMode inputMode)
+        {
+            if (inputMode != InputMode.VirtualKey && inputMode != InputMode.Scancode)
+            {
+                throw new ArgumentOutOfRangeException(nameof(inputMode));
+            }
+
+            _inputMode = inputMode;
+        }
 
         public void Send(KeyAction action)
         {
@@ -19,16 +31,16 @@ namespace MidiToKeyboard.Infrastructure
             switch (action.Type)
             {
                 case KeyActionType.KeyDown:
-                    SendKeyInput(action.KeyChar, NativeMethods.KEYEVENTF_KEYDOWN);
+                    SendKey(action.KeyChar, NativeMethods.KEYEVENTF_KEYDOWN);
                     return;
 
                 case KeyActionType.KeyUp:
-                    SendKeyInput(action.KeyChar, NativeMethods.KEYEVENTF_KEYUP);
+                    SendKey(action.KeyChar, NativeMethods.KEYEVENTF_KEYUP);
                     return;
 
                 case KeyActionType.KeyPress:
-                    SendKeyInput(action.KeyChar, NativeMethods.KEYEVENTF_KEYDOWN);
-                    SendKeyInput(action.KeyChar, NativeMethods.KEYEVENTF_KEYUP);
+                    SendKey(action.KeyChar, NativeMethods.KEYEVENTF_KEYDOWN);
+                    SendKey(action.KeyChar, NativeMethods.KEYEVENTF_KEYUP);
                     return;
 
                 case KeyActionType.UnicodeText:
@@ -41,6 +53,18 @@ namespace MidiToKeyboard.Infrastructure
 
                 default:
                     throw new NotSupportedException("Unsupported KeyActionType: " + action.Type);
+            }
+        }
+
+        private void SendKey(char keyChar, uint keyEventFlag)
+        {
+            if (_inputMode == InputMode.Scancode)
+            {
+                SendScancodeKey(keyChar, keyEventFlag);
+            }
+            else
+            {
+                SendKeyInput(keyChar, keyEventFlag);
             }
         }
 

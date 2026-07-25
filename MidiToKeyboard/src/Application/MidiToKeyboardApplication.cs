@@ -16,6 +16,8 @@ namespace MidiToKeyboard.Application
         private MidiToKeyboard.Domain.MidiTranslator _midiTranslator;
         private bool _isStarted;
 
+        public event Action<MidiInputActivity> MidiInputActivityOccurred;
+
         public MidiToKeyboardApplication(
             IMidiInput midiInput,
             IKeyOutput keyOutput,
@@ -37,7 +39,23 @@ namespace MidiToKeyboard.Application
 
         public void Start(string deviceId, string profileName)
         {
+            Start(deviceId, profileName, InputMode.VirtualKey);
+        }
+
+        public void Start(string deviceId, string profileName, InputMode inputMode)
+        {
             Stop();
+
+            IInputModeKeyOutput inputModeKeyOutput = _keyOutput as IInputModeKeyOutput;
+            if (inputModeKeyOutput != null)
+            {
+                inputModeKeyOutput.SetInputMode(inputMode);
+            }
+            else if (inputMode != InputMode.VirtualKey)
+            {
+                throw new NotSupportedException(
+                    "The configured key output does not support input mode selection.");
+            }
 
             SetProfile(profileName);
 
@@ -96,6 +114,7 @@ namespace MidiToKeyboard.Application
         private void OnMidiMessageReceived(MidiToKeyboard.Domain.MidiEvent midiEvent)
         {
             List<MidiToKeyboard.Domain.KeyAction> actions;
+            MidiInputActivity activity;
 
             lock (_syncRoot)
             {
@@ -103,12 +122,49 @@ namespace MidiToKeyboard.Application
                     return;
 
                 actions = _midiTranslator.Translate(midiEvent).ToList();
+                activity = CreateMidiInputActivity(midiEvent);
             }
 
             foreach (MidiToKeyboard.Domain.KeyAction action in actions)
             {
                 _keyOutput.Send(action);
             }
+
+            Action<MidiInputActivity> activityHandler = MidiInputActivityOccurred;
+            if (activity != null && activityHandler != null)
+            {
+                activityHandler(activity);
+            }
+        }
+
+        private MidiInputActivity CreateMidiInputActivity(
+            MidiToKeyboard.Domain.MidiEvent midiEvent)
+        {
+            MidiInputActivityType activityType;
+
+            if (midiEvent.Type == MidiToKeyboard.Domain.MidiEventType.NoteOn)
+            {
+                activityType = MidiInputActivityType.NoteOn;
+            }
+            else if (midiEvent.Type == MidiToKeyboard.Domain.MidiEventType.NoteOff)
+            {
+                activityType = MidiInputActivityType.NoteOff;
+            }
+            else
+            {
+                return null;
+            }
+
+            char keyChar;
+            if (!_currentProfile.NoteMappings.TryGetValue(midiEvent.NoteNumber, out keyChar))
+            {
+                keyChar = '\0';
+            }
+
+            return new MidiInputActivity(
+                activityType,
+                midiEvent.NoteNumber,
+                keyChar);
         }
     }
 }
