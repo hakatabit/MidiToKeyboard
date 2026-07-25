@@ -47,10 +47,6 @@ namespace MidiToKeyboard.Infrastructure
                     SendUnicodeText(action.Text);
                     return;
 
-                case KeyActionType.ScanCode:
-                case KeyActionType.VirtualKey:
-                    throw new NotSupportedException("Unsupported KeyActionType: " + action.Type);
-
                 default:
                     throw new NotSupportedException("Unsupported KeyActionType: " + action.Type);
             }
