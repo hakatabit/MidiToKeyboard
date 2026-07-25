@@ -32,14 +32,12 @@ namespace MidiToKeyboard.Ui
 
         public void Run()
         {
-            _application.MidiInputActivityOccurred += OnMidiInputActivityOccurred;
             try
             {
                 RunCore();
             }
             finally
             {
-                _application.MidiInputActivityOccurred -= OnMidiInputActivityOccurred;
                 _application.Stop();
             }
         }
@@ -120,7 +118,7 @@ namespace MidiToKeyboard.Ui
             Console.ReadKey();
         }
 
-        private static void OnMidiInputActivityOccurred(MidiInputActivity activity)
+        public void HandleMidiInputActivity(MidiInputActivity activity)
         {
             if (activity.Type == MidiInputActivityType.NoteOn)
             {
@@ -136,6 +134,11 @@ namespace MidiToKeyboard.Ui
                     activity.NoteNumber,
                     activity.KeyChar);
             }
+        }
+
+        public void HandleWarning(object sender, string message)
+        {
+            Console.WriteLine(message);
         }
     }
 }
