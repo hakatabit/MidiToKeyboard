@@ -1,50 +1,46 @@
-# MIDIToKeyboard
+# MidiToKeyboard
 
 ## 概要
 
-MIDI キーボード入力を、PC のキーボード入力に変換する Windows 向けツールです。
+MidiToKeyboardは、MIDIキーボードやパッドからの入力をPCのキーボード入力へ変換するWindows向けアプリケーションです。MIDIのNoteOn / NoteOffを、対象アプリケーションへKeyDown / KeyUpとして送出します。
 
-MIDI 信号の Note On/Off 信号をキーボードの KeyDown/Up イベントに変換する Windows コンソールアプリです。MIDI キーボードやパッドを使って、キーボード入力対応の音楽ゲームをプレイしたい人向けのツールです。
+現在はコンソールUIで動作します。内部はUi / Application / Domain / Infrastructureに分割されており、将来タスクトレイUIへ移行するときに、MIDI変換や外部依存処理への変更を小さくできる構成を目指しています。
 
-## 動作環境
+## 目的
 
-- OS: Windows 11
-- ランタイム: .NET Framework 4.7.2 (`net472`)
+MIDIキーボードやパッドを使って、キーボード入力に対応した音楽ゲームをプレイできるようにすることを目的としています。
 
-※ Windows 10 でも動作する可能性は高いですが、本プロジェクトでは Windows 11 上でのみ検証しています。
+## 主な機能
 
-※ MIDI 入力として認識されるデバイスが必要です（USB-MIDI 対応キーボードなど）。
+- MIDI入力デバイスの一覧表示と選択
+- 入力送信モードの選択
+  - VirtualKey
+  - Scancode
+- `mappings.json`に定義されたプロファイルの一覧表示と選択
+- MIDIノート番号とキー文字のマッピング
+- NoteOnに応じたKeyDown、NoteOffに応じたKeyUpの送出
+- 同じキーに複数ノートが割り当てられた場合の参照カウント管理
+- MIDI ON / OFFのコンソール表示
+- Windows `SendInput`失敗時の警告表示
 
-## ビルド方法
+## 実行時の基本フロー
 
-事前に依存ライブラリ（「依存ライブラリ」参照）を導入の上、ビルドしてください。Visual Studio であれば「NuGet パッケージの管理」から追加します。
+1. MIDI入力デバイスを選択します。
+2. 入力送信モードを選択します。
+   - `[1]` VirtualKey
+   - `[2]` Scancode
+   - `2`以外の入力はVirtualKeyとして扱われます。
+3. `mappings.json`から読み込まれたプロファイルを選択します。
+4. MIDI入力の待ち受けを開始します。
+5. MIDI入力に応じてキー入力を送出します。
+6. コンソールで任意のキーを押すと停止・終了します。
 
-※このプロジェクトは、Microsoft Visual Studio Community 2022 (64 ビット) を使用して開発しています。
+## `mappings.json`の設定
 
-## 利用方法
+`mappings.json`は実行ファイルと同じディレクトリから読み込まれます。Visual Studioでビルドすると出力ディレクトリへコピーされます。
 
-1. MIDI Note 番号とキーのマッピングを mappings.json に設定します。
-    - 設定内容は「mappings.json の設定」を参照してください。
-2. MIDI キーボードまたはパッド等の機器を PC に接続します。
-3. 本アプリを起動します。
-    - PC に接続された MIDI 機器を選択します。
-    - キーボードイベントの送信方法を選択します。
-    - マッピングセットを選択します。
-    - Note 信号 To キーボードイベントの変換を開始します。
-4. 任意のゲームでキー入力として利用できます。
-5. コンソール画面で何かキーを押下すると終了します。
+`sets`には複数のプロファイルを定義できます。`name`が選択画面に表示され、`mappings`にMIDIノート番号とキー文字の対応を記述します。
 
-※管理者権限は不要です。
-
-※送信方法は **仮想キーコード** または **スキャンコード** です。後者は英語配列のキーボードに対応しています。
-
-※ノート名（C4 など）とノート番号の対応は、`NoteNumberList.md` を参照してください。
-
-## mappings.json の設定
-
-ノート番号とキーの組み合わせのパターンを sets に追加します（複数可）。name にセットの名前、mappings にノート番号とキーの組み合わせを記述します。
-
-設定例
 ```json
 {
   "sets": [
@@ -61,39 +57,68 @@ MIDI 信号の Note On/Off 信号をキーボードの KeyDown/Up イベント�
         "69": "k",
         "71": "l",
         "72": "n"
-       }
+      }
     }
   ]
 }
 ```
 
-※ 1つのノート番号には、1つのキーのみ割り当てられます。
+- 1つのノート番号には1つのキー文字を割り当てます。
+- キー文字列の先頭文字がマッピングに使用されます。
+- 選択可能なプロファイルがない場合は、メッセージを表示して終了します。
+- ファイルが存在しない、またはJSONを読み込めない場合は、エラーメッセージを表示して終了します。
+- 代替マッピングは自動生成しません。
 
-※実行ファイルと同じフォルダに mappings.json を置いてください。
+ノート名とノート番号の対応は`NoteNumberList.md`を参照してください。
+
+## 開発・動作環境
+
+- OS: Windows
+- IDE: Visual Studio 2022
+- 対象フレームワーク: .NET Framework 4.7.2
+- プロジェクト形式: 旧形式csproj
+- MIDI入力: [Melanchall.DryWetMidi](https://github.com/melanchall/drywetmidi)
+- キー送出: Windows API `SendInput`
+
+既存の確認実績はWindows 11上のものです。Windows 10など、その他のWindowsバージョンで使用する場合は実機確認してください。
+
+## ビルド方法
+
+1. Visual Studioで`MidiToKeyboard.sln`を開きます。
+2. NuGetパッケージを復元します。
+3. DebugまたはRelease構成でビルドします。
+4. 出力ディレクトリに`mappings.json`がコピーされていることを確認します。
+
+詳細な確認項目は`TESTING.md`を参照してください。
+
+## 注意事項
+
+- ビルドと実行はWindows上のVisual Studioを前提としています。WSL上でのビルドは前提にしていません。
+- .NET Framework 4.7.2と旧形式csprojの互換性を維持します。
+- C# 10以上の構文は使用しない方針です。
+- namespaceには従来のブロック形式を使用し、ファイルスコープnamespaceは使用しません。
+- キー入力先のウィンドウにフォーカスが必要です。
+- 対象アプリケーションとの権限差やOSの制限により、`SendInput`が届かない場合があります。
+- 現在はタスクトレイUIに対応していません。
 
 ## 動作確認タイトル
 
-- DJMAX RESPECT V (XBOX/Steam)
-- MUSYNX (XBOX/Steam)
-- EZ2ON (Steam)
+既存のREADMEには、以下のPC版タイトルでの確認実績が記録されています。
 
-※ XBOX は、Xbox Play Anywhere による PC 版です。
+- DJMAX RESPECT V（Xbox / Steam）
+- MUSYNX（Xbox / Steam）
+- EZ2ON（Steam）
 
-※ DJMAX RESPECT V は、スキャンコードのみ使用できます。
+XboxはXbox Play AnywhereによるPC版です。DJMAX RESPECT VではScancodeモードを使用します。他のアプリケーションでの動作は個別に確認してください。
 
-※他のゲームでも動作する可能性があります。
+## 今後の予定
 
-## 課題
-
-※このプログラムは、現在プロトタイプ段階です。将来的に構造を見直し、タスクトレイ対応を予定しています。
+- コンソールUIからタスクトレイUIへの移行
+- UI差し替え時のDomain / Infrastructureへの変更を最小限に保つ
+- 必要に応じた自動テストの追加
 
 ## ライセンス
 
-このプロジェクトは MIT ライセンスの下で公開されています。
-詳細は `LICENSE` を参照してください。
+このプロジェクトはMITライセンスの下で公開されています。詳細は`LICENSE`を参照してください。
 
-## 依存ライブラリ
-
-- [`Melanchall.DryWetMidi`](https://github.com/melanchall/drywetmidi) - MIT License
-
-※依存ライブラリのライセンスはそれぞれの作者に帰属します。
+依存ライブラリのライセンスは、それぞれの作者に帰属します。
