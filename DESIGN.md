@@ -11,8 +11,6 @@
 - 複数デバイス / 複数トラックの高度なルーティング（将来の拡張で対応）
 - UI デザインの刷新（まずは差し替え可能な構造を作る）
 
----
-
 ## アーキテクチャ（依存方向）
 依存方向は次のとおりとする。
 
@@ -49,8 +47,6 @@
   - Win32 SendInput によるキー送出
   - JSON の読み込みなど
   - 外部依存はここに隔離する
-
----
 
 ## モジュール / 責務（主要コンポーネント）
 
@@ -111,15 +107,11 @@
 - `NativeMethods`
   - SendInput などの Win32 API 宣言をここに閉じ込める
 
----
-
 ## InputMode と KeyActionType の役割分担
 - `KeyActionType` は「何を押すか」を表す
 - `InputMode` は「どう送るか」を表す
 - VirtualKey / Scancode の切り替えは `InputMode` で扱う
 - `KeyActionType` に送信方式を混ぜない
-
----
 
 ## 通知設計
 - `MidiToKeyboardApplication` は `MidiInputActivityOccurred` で MIDI 入力活動を通知する
@@ -128,29 +120,21 @@
 - `ConsoleUi` が通知内容を Console に表示する
 - Application / Infrastructure は `Console.WriteLine` を直接呼ばない
 
----
-
 ## mappings 未登録時の方針
 - 選択可能な Profile がない場合はメッセージを表示して安全に終了する
 - mappings.json が存在しない、または読み込めない場合はエラーメッセージを表示して終了する
 - 代替マッピングを自動生成しない
-
----
 
 ## リファクタのガードレール
 - Domain から Infrastructure を参照しない
 - UI は Application 経由でのみ処理を行う
 - 挙動を変えない（NoteOn velocity=0 → NoteOff 等）
 
----
-
 ## 互換性メモ
 - .NET Framework 4.7.2（旧形式 csproj）
 - ビルド / 実行は Windows（Visual Studio）前提
 - C# 10 以上の構文は使用しない
 - ファイルスコープ namespace は使用しない
-
----
 
 ## 今後の予定
 - コンソール UI からタスクトレイ UI への移行
