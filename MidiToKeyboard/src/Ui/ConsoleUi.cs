@@ -5,31 +5,55 @@ using MidiToKeyboard.Application;
 
 namespace MidiToKeyboard.Ui
 {
+    /// <summary>
+    /// コンソールを介した選択操作と実行中の通知表示を担当
+    /// </summary>
     public sealed class ConsoleUi
     {
         private readonly MidiToKeyboardApplication _application;
         private readonly IMidiInput _midiInput;
         private readonly IProfileRepository _profileRepository;
 
+        /// <summary>
+        /// UI が利用するアプリケーションと一覧取得元の初期化
+        /// </summary>
+        /// <param name="application">MIDI 変換処理を制御するアプリケーション</param>
+        /// <param name="midiInput">選択可能な MIDI デバイスの取得元</param>
+        /// <param name="profileRepository">選択可能なプロファイルの取得元</param>
         public ConsoleUi(
             MidiToKeyboardApplication application,
             IMidiInput midiInput,
             IProfileRepository profileRepository)
         {
             if (application == null)
-                throw new ArgumentNullException(nameof(application));
+            {
+                throw new ArgumentNullException(
+                    nameof(application),
+                    "アプリケーションは null にできません。");
+            }
 
             if (midiInput == null)
-                throw new ArgumentNullException(nameof(midiInput));
+            {
+                throw new ArgumentNullException(
+                    nameof(midiInput),
+                    "MIDI 入力は null にできません。");
+            }
 
             if (profileRepository == null)
-                throw new ArgumentNullException(nameof(profileRepository));
+            {
+                throw new ArgumentNullException(
+                    nameof(profileRepository),
+                    "プロファイルリポジトリは null にできません。");
+            }
 
             _application = application;
             _midiInput = midiInput;
             _profileRepository = profileRepository;
         }
 
+        /// <summary>
+        /// 対話形式の操作フローを実行し、終了時にアプリケーションを停止
+        /// </summary>
         public void Run()
         {
             try
@@ -73,8 +97,8 @@ namespace MidiToKeyboard.Ui
             Console.WriteLine("  [1] 仮想キーコード (VK) - 仮想キー＋修飾キーで送信");
             Console.WriteLine("  [2] スキャンコード (SC) - スキャンコードで送信（ゲーム等向け）");
             Console.Write("番号を入力: ");
-            string modeInput = Console.ReadLine();
-            InputMode inputMode = modeInput != null && modeInput.Trim() == "2"
+            string inputModeSelection = Console.ReadLine();
+            InputMode inputMode = inputModeSelection != null && inputModeSelection.Trim() == "2"
                 ? InputMode.Scancode
                 : InputMode.VirtualKey;
 
@@ -118,6 +142,10 @@ namespace MidiToKeyboard.Ui
             Console.ReadKey();
         }
 
+        /// <summary>
+        /// MIDI 入力活動をコンソールに表示
+        /// </summary>
+        /// <param name="activity">表示する MIDI 入力活動</param>
         public void HandleMidiInputActivity(MidiInputActivity activity)
         {
             if (activity.Type == MidiInputActivityType.NoteOn)
@@ -136,6 +164,11 @@ namespace MidiToKeyboard.Ui
             }
         }
 
+        /// <summary>
+        /// キー出力から通知された警告をコンソールに表示
+        /// </summary>
+        /// <param name="sender">警告の通知元</param>
+        /// <param name="message">表示する警告メッセージ</param>
         public void HandleWarning(object sender, string message)
         {
             Console.WriteLine(message);

@@ -1,8 +1,8 @@
+using System;
+using System.IO;
 using MidiToKeyboard.Application;
 using MidiToKeyboard.Infrastructure;
 using MidiToKeyboard.Ui;
-using System;
-using System.IO;
 
 namespace MidiToKeyboard
 {
@@ -13,10 +13,6 @@ namespace MidiToKeyboard
     {
         private const string MappingFileName = "mappings.json";
 
-        /// <summary>
-        /// アプリケーションのエントリポイント
-        /// </summary>
-        /// <param name="args">コマンドライン引数（未使用）</param>
         private static void Main(string[] args)
         {
             try

@@ -1,46 +1,61 @@
-using MidiToKeyboard.Application;
-using MidiToKeyboard.Domain;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using MidiToKeyboard.Application;
+using MidiToKeyboard.Domain;
 
 namespace MidiToKeyboard.Infrastructure
 {
+    /// <summary>
+    /// JSON ファイルからのプロファイル読み込み
+    /// </summary>
     public sealed class JsonProfileRepository : IProfileRepository
     {
-        private readonly string filePath;
+        private readonly string _filePath;
 
+        /// <summary>
+        /// 読み込み対象の JSON ファイルを指定して初期化
+        /// </summary>
         public JsonProfileRepository(string filePath)
         {
             if (string.IsNullOrWhiteSpace(filePath))
             {
-                throw new ArgumentException("File path must not be null, empty, or whitespace.", nameof(filePath));
+                throw new ArgumentException(
+                    "ファイルパスに null、空文字列、または空白のみの文字列は指定できません。",
+                    nameof(filePath));
             }
 
-            this.filePath = filePath;
+            _filePath = filePath;
         }
 
+        /// <inheritdoc />
         public Profile Load(string name)
         {
             if (string.IsNullOrWhiteSpace(name))
             {
-                throw new ArgumentException("Profile name must not be null, empty, or whitespace.", nameof(name));
+                throw new ArgumentException(
+                    "プロファイル名に null、空文字列、または空白のみの文字列は指定できません。",
+                    nameof(name));
             }
 
             MappingSet set = LoadMappingSets()
                 .Where(mappingSet => mappingSet != null)
-                .FirstOrDefault(mappingSet => string.Equals(mappingSet.name, name, StringComparison.Ordinal));
+                .FirstOrDefault(mappingSet => string.Equals(
+                    mappingSet.name,
+                    name,
+                    StringComparison.Ordinal));
 
             if (set == null)
             {
-                throw new KeyNotFoundException("Profile was not found: " + name);
+                throw new KeyNotFoundException("プロファイルが見つかりません: " + name);
             }
 
             return CreateProfile(set);
         }
 
+        /// <inheritdoc />
         public IEnumerable<string> ListNames()
         {
             return LoadMappingSets()
@@ -50,7 +65,7 @@ namespace MidiToKeyboard.Infrastructure
 
         private List<MappingSet> LoadMappingSets()
         {
-            using (var mappingsStream = File.OpenRead(filePath))
+            using (var mappingsStream = File.OpenRead(_filePath))
             {
                 MappingFile mappingFile = JsonSerializer.Deserialize<MappingFile>(mappingsStream);
                 return mappingFile?.sets ?? new List<MappingSet>();
@@ -82,6 +97,9 @@ namespace MidiToKeyboard.Infrastructure
 
             return new Profile(set.name, noteMappings);
         }
+
+        // 以下の JSON 読み込み用 DTO では、既定の名前照合で既存 JSON 形式を維持するため、
+        // 小文字のプロパティ名を使用する
 
         private class MappingFile
         {

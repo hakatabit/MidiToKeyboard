@@ -10,7 +10,10 @@ namespace MidiToKeyboard.Infrastructure
     internal static class NativeMethods
     {
         [DllImport("user32.dll", SetLastError = true)]
-        internal static extern uint SendInput(uint nInputs, [In] INPUT[] pInputs, int cbSize);
+        internal static extern uint SendInput(
+            uint nInputs,
+            [In] INPUT[] pInputs,
+            int cbSize);
 
         [DllImport("user32.dll")]
         internal static extern short VkKeyScan(char ch);
@@ -28,9 +31,14 @@ namespace MidiToKeyboard.Infrastructure
         [StructLayout(LayoutKind.Explicit)]
         internal struct InputUnion
         {
-            [FieldOffset(0)] public MOUSEINPUT mi;
-            [FieldOffset(0)] public KEYBDINPUT ki;
-            [FieldOffset(0)] public HARDWAREINPUT hi;
+            [FieldOffset(0)]
+            public MOUSEINPUT mi;
+
+            [FieldOffset(0)]
+            public KEYBDINPUT ki;
+
+            [FieldOffset(0)]
+            public HARDWAREINPUT hi;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -62,7 +70,6 @@ namespace MidiToKeyboard.Infrastructure
             public IntPtr dwExtraInfo;
         }
 
-        // Win32 定数
         internal const int INPUT_KEYBOARD = 1;
         internal const uint KEYEVENTF_KEYDOWN = 0x0000;
         internal const uint KEYEVENTF_KEYUP = 0x0002;

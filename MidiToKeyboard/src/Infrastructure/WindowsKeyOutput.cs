@@ -1,31 +1,44 @@
-using MidiToKeyboard.Application;
-using MidiToKeyboard.Domain;
 using System;
 using System.Runtime.InteropServices;
+using MidiToKeyboard.Application;
+using MidiToKeyboard.Domain;
 
 namespace MidiToKeyboard.Infrastructure
 {
+    /// <summary>
+    /// Windows の SendInput を使用したキー操作の送信
+    /// </summary>
     public sealed class WindowsKeyOutput : IKeyOutput, IInputModeKeyOutput
     {
         private InputMode _inputMode = InputMode.VirtualKey;
 
+        /// <summary>
+        /// キー操作の送信に失敗したときの通知
+        /// </summary>
         public event EventHandler<string> WarningOccurred;
 
+        /// <inheritdoc />
         public void SetInputMode(InputMode inputMode)
         {
             if (inputMode != InputMode.VirtualKey && inputMode != InputMode.Scancode)
             {
-                throw new ArgumentOutOfRangeException(nameof(inputMode));
+                throw new ArgumentOutOfRangeException(
+                    nameof(inputMode),
+                    inputMode,
+                    "入力送信モードは VirtualKey または Scancode である必要があります。");
             }
 
             _inputMode = inputMode;
         }
 
+        /// <inheritdoc />
         public void Send(KeyAction action)
         {
             if (action == null)
             {
-                throw new ArgumentNullException(nameof(action));
+                throw new ArgumentNullException(
+                    nameof(action),
+                    "キー操作は null にできません。");
             }
 
             switch (action.Type)
@@ -48,7 +61,8 @@ namespace MidiToKeyboard.Infrastructure
                     return;
 
                 default:
-                    throw new NotSupportedException("Unsupported KeyActionType: " + action.Type);
+                    throw new NotSupportedException(
+                        "サポートされていない KeyActionType です: " + action.Type);
             }
         }
 
@@ -88,11 +102,10 @@ namespace MidiToKeyboard.Infrastructure
         }
 
         /// <summary>
-        /// 指定された文字に対して仮想キー／修飾キーを用いてキーイベントを送信する
-        /// VkKeyScan が失敗した場合は Unicode フォールバックを行う
+        /// 指定された文字に対応する仮想キーイベントを送信
         /// </summary>
         /// <param name="keyChar">送信対象の文字</param>
-        /// <param name="keyEventFlag">KEYEVENTF_* のフラグ（KEYEVENTF_KEYDOWN / KEYEVENTF_KEYUP）</param>
+        /// <param name="keyEventFlag">KEYEVENTF_KEYDOWN または KEYEVENTF_KEYUP</param>
         public void SendKeyInput(char keyChar, uint keyEventFlag)
         {
             short vkWithState = NativeMethods.VkKeyScan(keyChar);
@@ -106,37 +119,52 @@ namespace MidiToKeyboard.Infrastructure
             byte virtualKey = (byte)(vkWithState & 0xFF);
             byte shiftState = (byte)((vkWithState >> 8) & 0xFF);
 
-            bool needShift = (shiftState & 1) != 0;
-            bool needCtrl = (shiftState & 2) != 0;
-            bool needAlt = (shiftState & 4) != 0;
+            bool needsShift = (shiftState & 1) != 0;
+            bool needsControl = (shiftState & 2) != 0;
+            bool needsAlt = (shiftState & 4) != 0;
 
             // キーダウン時は修飾を先に押し、キーアップ時は修飾を後で離す
             if (keyEventFlag == NativeMethods.KEYEVENTF_KEYDOWN)
             {
-                if (needShift) SendSingleVk(NativeMethods.VK_SHIFT, NativeMethods.KEYEVENTF_KEYDOWN);
-                if (needCtrl) SendSingleVk(NativeMethods.VK_CONTROL, NativeMethods.KEYEVENTF_KEYDOWN);
-                if (needAlt) SendSingleVk(NativeMethods.VK_MENU, NativeMethods.KEYEVENTF_KEYDOWN);
+                if (needsShift)
+                {
+                    SendSingleVirtualKey(NativeMethods.VK_SHIFT, NativeMethods.KEYEVENTF_KEYDOWN);
+                }
 
-                // 通常は仮想キーを送る
-                SendSingleVk(virtualKey, NativeMethods.KEYEVENTF_KEYDOWN);
+                if (needsControl)
+                {
+                    SendSingleVirtualKey(NativeMethods.VK_CONTROL, NativeMethods.KEYEVENTF_KEYDOWN);
+                }
+
+                if (needsAlt)
+                {
+                    SendSingleVirtualKey(NativeMethods.VK_MENU, NativeMethods.KEYEVENTF_KEYDOWN);
+                }
+
+                SendSingleVirtualKey(virtualKey, NativeMethods.KEYEVENTF_KEYDOWN);
             }
-            else // KEYEVENTF_KEYUP
+            else
             {
-                // まず本体のキーを離す
-                SendSingleVk(virtualKey, NativeMethods.KEYEVENTF_KEYUP);
+                SendSingleVirtualKey(virtualKey, NativeMethods.KEYEVENTF_KEYUP);
 
-                if (needAlt) SendSingleVk(NativeMethods.VK_MENU, NativeMethods.KEYEVENTF_KEYUP);
-                if (needCtrl) SendSingleVk(NativeMethods.VK_CONTROL, NativeMethods.KEYEVENTF_KEYUP);
-                if (needShift) SendSingleVk(NativeMethods.VK_SHIFT, NativeMethods.KEYEVENTF_KEYUP);
+                if (needsAlt)
+                {
+                    SendSingleVirtualKey(NativeMethods.VK_MENU, NativeMethods.KEYEVENTF_KEYUP);
+                }
+
+                if (needsControl)
+                {
+                    SendSingleVirtualKey(NativeMethods.VK_CONTROL, NativeMethods.KEYEVENTF_KEYUP);
+                }
+
+                if (needsShift)
+                {
+                    SendSingleVirtualKey(NativeMethods.VK_SHIFT, NativeMethods.KEYEVENTF_KEYUP);
+                }
             }
         }
 
-        /// <summary>
-        /// 単一の仮想キーイベントを SendInput で送るヘルパ
-        /// </summary>
-        /// <param name="virtualKey">仮想キーコード</param>
-        /// <param name="flags">送信フラグ</param>
-        private void SendSingleVk(ushort virtualKey, uint flags)
+        private void SendSingleVirtualKey(ushort virtualKey, uint flags)
         {
             var input = new NativeMethods.INPUT
             {
@@ -154,19 +182,16 @@ namespace MidiToKeyboard.Infrastructure
                 }
             };
 
-            uint result = NativeMethods.SendInput(1, new NativeMethods.INPUT[] { input }, Marshal.SizeOf(typeof(NativeMethods.INPUT)));
+            uint result = NativeMethods.SendInput(
+                1,
+                new NativeMethods.INPUT[] { input },
+                Marshal.SizeOf(typeof(NativeMethods.INPUT)));
             if (result == 0)
             {
                 OnWarningOccurred($"[エラー] SendInput 失敗 GetLastWin32Error: {Marshal.GetLastWin32Error()}");
             }
         }
 
-        /// <summary>
-        /// VkKeyScan が失敗した文字（Unicode）を送るためのフォールバック実装
-        /// KEYEVENTF_UNICODE を用いて wScan に Unicode を入れて送信する
-        /// </summary>
-        /// <param name="keyChar">送る文字</param>
-        /// <param name="keyEventFlag">KEYEVENTF_* フラグ</param>
         private void SendUnicodeKey(char keyChar, uint keyEventFlag)
         {
             var input = new NativeMethods.INPUT
@@ -185,7 +210,10 @@ namespace MidiToKeyboard.Infrastructure
                 }
             };
 
-            uint result = NativeMethods.SendInput(1, new NativeMethods.INPUT[] { input }, Marshal.SizeOf(typeof(NativeMethods.INPUT)));
+            uint result = NativeMethods.SendInput(
+                1,
+                new NativeMethods.INPUT[] { input },
+                Marshal.SizeOf(typeof(NativeMethods.INPUT)));
             if (result == 0)
             {
                 OnWarningOccurred($"[エラー] Unicode SendInput 失敗 GetLastWin32Error: {Marshal.GetLastWin32Error()}");
@@ -193,14 +221,12 @@ namespace MidiToKeyboard.Infrastructure
         }
 
         /// <summary>
-        /// 指定された文字に対してスキャンコード／修飾キーを用いてキーイベントを送信する
-        /// VkKeyScan が失敗した場合は Unicode フォールバックを行う
+        /// 指定された文字に対応するスキャンコードイベントを送信
         /// </summary>
         /// <param name="keyChar">送信対象の文字</param>
-        /// <param name="keyEventFlag">KEYEVENTF_* のフラグ</param>
+        /// <param name="keyEventFlag">KEYEVENTF_KEYDOWN または KEYEVENTF_KEYUP</param>
         public void SendScancodeKey(char keyChar, uint keyEventFlag)
         {
-            // VkKeyScan でマップできなければ Unicode フォールバック
             short vkWithState = NativeMethods.VkKeyScan(keyChar);
             if (vkWithState == -1)
             {
@@ -211,51 +237,76 @@ namespace MidiToKeyboard.Infrastructure
             byte virtualKey = (byte)(vkWithState & 0xFF);
             byte shiftState = (byte)((vkWithState >> 8) & 0xFF);
 
-            bool needShift = (shiftState & 1) != 0;
-            bool needCtrl = (shiftState & 2) != 0;
-            bool needAlt = (shiftState & 4) != 0;
+            bool needsShift = (shiftState & 1) != 0;
+            bool needsControl = (shiftState & 2) != 0;
+            bool needsAlt = (shiftState & 4) != 0;
 
-            // 修飾キーの scancode を取得（MapVirtualKey: MAPVK_VK_TO_VSC = 0）
-            ushort scShift = (ushort)NativeMethods.MapVirtualKey(NativeMethods.VK_SHIFT, 0);
-            ushort scCtrl = (ushort)NativeMethods.MapVirtualKey(NativeMethods.VK_CONTROL, 0);
-            ushort scAlt = (ushort)NativeMethods.MapVirtualKey(NativeMethods.VK_MENU, 0);
+            ushort shiftScanCode = (ushort)NativeMethods.MapVirtualKey(NativeMethods.VK_SHIFT, 0);
+            ushort controlScanCode = (ushort)NativeMethods.MapVirtualKey(NativeMethods.VK_CONTROL, 0);
+            ushort altScanCode = (ushort)NativeMethods.MapVirtualKey(NativeMethods.VK_MENU, 0);
 
-            // 主キーの scancode
             ushort scanCode = (ushort)NativeMethods.MapVirtualKey(virtualKey, 0);
-            bool extended = IsExtendedKeyForVk(virtualKey);
+            bool isExtendedKey = IsExtendedVirtualKey(virtualKey);
 
             if (keyEventFlag == NativeMethods.KEYEVENTF_KEYDOWN)
             {
-                // 修飾を先に押す
-                if (needShift) SendSingleScancode(scShift, false, NativeMethods.KEYEVENTF_SCANCODE);
-                if (needCtrl) SendSingleScancode(scCtrl, false, NativeMethods.KEYEVENTF_SCANCODE);
-                if (needAlt) SendSingleScancode(scAlt, false, NativeMethods.KEYEVENTF_SCANCODE);
+                if (needsShift)
+                {
+                    SendSingleScancode(shiftScanCode, false, NativeMethods.KEYEVENTF_SCANCODE);
+                }
 
-                // 主キー押下
-                SendSingleScancode(scanCode, extended, NativeMethods.KEYEVENTF_SCANCODE);
+                if (needsControl)
+                {
+                    SendSingleScancode(controlScanCode, false, NativeMethods.KEYEVENTF_SCANCODE);
+                }
+
+                if (needsAlt)
+                {
+                    SendSingleScancode(altScanCode, false, NativeMethods.KEYEVENTF_SCANCODE);
+                }
+
+                SendSingleScancode(scanCode, isExtendedKey, NativeMethods.KEYEVENTF_SCANCODE);
             }
-            else // KEYEVENTF_KEYUP
+            else
             {
-                // 主キー離上
-                SendSingleScancode(scanCode, extended, NativeMethods.KEYEVENTF_SCANCODE | NativeMethods.KEYEVENTF_KEYUP);
+                SendSingleScancode(
+                    scanCode,
+                    isExtendedKey,
+                    NativeMethods.KEYEVENTF_SCANCODE | NativeMethods.KEYEVENTF_KEYUP);
 
-                // 修飾を後で離す（逆順でも可）
-                if (needAlt) SendSingleScancode(scAlt, false, NativeMethods.KEYEVENTF_SCANCODE | NativeMethods.KEYEVENTF_KEYUP);
-                if (needCtrl) SendSingleScancode(scCtrl, false, NativeMethods.KEYEVENTF_SCANCODE | NativeMethods.KEYEVENTF_KEYUP);
-                if (needShift) SendSingleScancode(scShift, false, NativeMethods.KEYEVENTF_SCANCODE | NativeMethods.KEYEVENTF_KEYUP);
+                if (needsAlt)
+                {
+                    SendSingleScancode(
+                        altScanCode,
+                        false,
+                        NativeMethods.KEYEVENTF_SCANCODE | NativeMethods.KEYEVENTF_KEYUP);
+                }
+
+                if (needsControl)
+                {
+                    SendSingleScancode(
+                        controlScanCode,
+                        false,
+                        NativeMethods.KEYEVENTF_SCANCODE | NativeMethods.KEYEVENTF_KEYUP);
+                }
+
+                if (needsShift)
+                {
+                    SendSingleScancode(
+                        shiftScanCode,
+                        false,
+                        NativeMethods.KEYEVENTF_SCANCODE | NativeMethods.KEYEVENTF_KEYUP);
+                }
             }
         }
 
-        /// <summary>
-        /// 単一の scancode イベントを SendInput で送るヘルパ
-        /// </summary>
-        /// <param name="scancode">送信するスキャンコード</param>
-        /// <param name="extended">拡張キーフラグを付けるか</param>
-        /// <param name="flags">送信フラグ</param>
-        private void SendSingleScancode(ushort scancode, bool extended, uint flags)
+        private void SendSingleScancode(ushort scanCode, bool isExtendedKey, uint flags)
         {
             uint sendFlags = flags;
-            if (extended) sendFlags |= NativeMethods.KEYEVENTF_EXTENDEDKEY;
+            if (isExtendedKey)
+            {
+                sendFlags |= NativeMethods.KEYEVENTF_EXTENDEDKEY;
+            }
 
             var input = new NativeMethods.INPUT
             {
@@ -265,7 +316,7 @@ namespace MidiToKeyboard.Infrastructure
                     ki = new NativeMethods.KEYBDINPUT
                     {
                         wVk = 0,
-                        wScan = scancode,
+                        wScan = scanCode,
                         dwFlags = sendFlags,
                         time = 0,
                         dwExtraInfo = IntPtr.Zero
@@ -273,19 +324,17 @@ namespace MidiToKeyboard.Infrastructure
                 }
             };
 
-            uint result = NativeMethods.SendInput(1, new NativeMethods.INPUT[] { input }, Marshal.SizeOf(typeof(NativeMethods.INPUT)));
+            uint result = NativeMethods.SendInput(
+                1,
+                new NativeMethods.INPUT[] { input },
+                Marshal.SizeOf(typeof(NativeMethods.INPUT)));
             if (result == 0)
             {
                 OnWarningOccurred($"[エラー] Scancode SendInput 失敗 GetLastWin32Error: {Marshal.GetLastWin32Error()}");
             }
         }
 
-        /// <summary>
-        /// 指定した仮想キーが拡張キーに該当するか判定する
-        /// </summary>
-        /// <param name="virtualKey">仮想キーコード</param>
-        /// <returns>拡張キーなら true</returns>
-        private bool IsExtendedKeyForVk(ushort virtualKey)
+        private bool IsExtendedVirtualKey(ushort virtualKey)
         {
             switch (virtualKey)
             {

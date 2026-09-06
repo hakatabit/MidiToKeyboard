@@ -1,9 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MidiToKeyboard.Domain;
 
 namespace MidiToKeyboard.Application
 {
+    /// <summary>
+    /// MIDI 入力、プロファイル、およびキー出力の接続
+    /// </summary>
     public sealed class MidiToKeyboardApplication
     {
         private readonly object _syncRoot = new object();
@@ -11,36 +15,68 @@ namespace MidiToKeyboard.Application
         private readonly IKeyOutput _keyOutput;
         private readonly IProfileRepository _profileRepository;
 
-        private MidiToKeyboard.Domain.Profile _currentProfile;
-        private MidiToKeyboard.Domain.MidiTranslator _midiTranslator;
+        private Profile _currentProfile;
+        private MidiTranslator _midiTranslator;
         private bool _isStarted;
 
+        /// <summary>
+        /// UI に表示可能な MIDI 入力活動が発生したときの通知
+        /// </summary>
         public event Action<MidiInputActivity> MidiInputActivityOccurred;
 
+        /// <summary>
+        /// アプリケーションを構成する依存関係の初期化
+        /// </summary>
+        /// <param name="midiInput">MIDI 入力</param>
+        /// <param name="keyOutput">キー出力</param>
+        /// <param name="profileRepository">プロファイルのリポジトリ</param>
         public MidiToKeyboardApplication(
             IMidiInput midiInput,
             IKeyOutput keyOutput,
             IProfileRepository profileRepository)
         {
             if (midiInput == null)
-                throw new ArgumentNullException(nameof(midiInput));
+            {
+                throw new ArgumentNullException(
+                    nameof(midiInput),
+                    "MIDI 入力は null にできません。");
+            }
 
             if (keyOutput == null)
-                throw new ArgumentNullException(nameof(keyOutput));
+            {
+                throw new ArgumentNullException(
+                    nameof(keyOutput),
+                    "キー出力は null にできません。");
+            }
 
             if (profileRepository == null)
-                throw new ArgumentNullException(nameof(profileRepository));
+            {
+                throw new ArgumentNullException(
+                    nameof(profileRepository),
+                    "プロファイルのリポジトリは null にできません。");
+            }
 
             _midiInput = midiInput;
             _keyOutput = keyOutput;
             _profileRepository = profileRepository;
         }
 
+        /// <summary>
+        /// VirtualKey モードで MIDI 入力の変換を開始
+        /// </summary>
+        /// <param name="deviceId">使用する MIDI 入力デバイスの識別値</param>
+        /// <param name="profileName">使用するプロファイル名</param>
         public void Start(string deviceId, string profileName)
         {
             Start(deviceId, profileName, InputMode.VirtualKey);
         }
 
+        /// <summary>
+        /// 指定した入力送信モードで MIDI 入力の変換を開始
+        /// </summary>
+        /// <param name="deviceId">使用する MIDI 入力デバイスの識別値</param>
+        /// <param name="profileName">使用するプロファイル名</param>
+        /// <param name="inputMode">キー入力の送信方式</param>
         public void Start(string deviceId, string profileName, InputMode inputMode)
         {
             Stop();
@@ -53,7 +89,7 @@ namespace MidiToKeyboard.Application
             else if (inputMode != InputMode.VirtualKey)
             {
                 throw new NotSupportedException(
-                    "The configured key output does not support input mode selection.");
+                    "構成されたキー出力は入力送信モードの選択をサポートしていません。");
             }
 
             SetProfile(profileName);
@@ -74,6 +110,9 @@ namespace MidiToKeyboard.Application
             }
         }
 
+        /// <summary>
+        /// MIDI 入力の変換を停止し、実行中の状態を破棄
+        /// </summary>
         public void Stop()
         {
             lock (_syncRoot)
@@ -90,16 +129,22 @@ namespace MidiToKeyboard.Application
             }
         }
 
+        /// <summary>
+        /// MIDI 入力の変換に使用するプロファイルを設定
+        /// </summary>
+        /// <param name="profileName">使用するプロファイル名</param>
         public void SetProfile(string profileName)
         {
-            MidiToKeyboard.Domain.Profile profile = _profileRepository.Load(profileName);
+            Profile profile = _profileRepository.Load(profileName);
             if (profile == null)
-                throw new InvalidOperationException("Profile repository returned null.");
+            {
+                throw new InvalidOperationException(
+                    "プロファイルリポジトリが null を返しました。");
+            }
 
-            MidiToKeyboard.Domain.KeyPressState keyPressState =
-                new MidiToKeyboard.Domain.KeyPressState();
-            MidiToKeyboard.Domain.MidiTranslator midiTranslator =
-                new MidiToKeyboard.Domain.MidiTranslator(profile.NoteMappings, keyPressState);
+            KeyPressState keyPressState = new KeyPressState();
+            MidiTranslator midiTranslator =
+                new MidiTranslator(profile.NoteMappings, keyPressState);
 
             lock (_syncRoot)
             {
@@ -108,21 +153,23 @@ namespace MidiToKeyboard.Application
             }
         }
 
-        private void OnMidiMessageReceived(MidiToKeyboard.Domain.MidiEvent midiEvent)
+        private void OnMidiMessageReceived(MidiEvent midiEvent)
         {
-            List<MidiToKeyboard.Domain.KeyAction> actions;
+            List<KeyAction> actions;
             MidiInputActivity activity;
 
             lock (_syncRoot)
             {
                 if (_midiTranslator == null)
+                {
                     return;
+                }
 
                 actions = _midiTranslator.Translate(midiEvent).ToList();
                 activity = CreateMidiInputActivity(midiEvent);
             }
 
-            foreach (MidiToKeyboard.Domain.KeyAction action in actions)
+            foreach (KeyAction action in actions)
             {
                 _keyOutput.Send(action);
             }
@@ -135,15 +182,15 @@ namespace MidiToKeyboard.Application
         }
 
         private MidiInputActivity CreateMidiInputActivity(
-            MidiToKeyboard.Domain.MidiEvent midiEvent)
+            MidiEvent midiEvent)
         {
             MidiInputActivityType activityType;
 
-            if (midiEvent.Type == MidiToKeyboard.Domain.MidiEventType.NoteOn)
+            if (midiEvent.Type == MidiEventType.NoteOn)
             {
                 activityType = MidiInputActivityType.NoteOn;
             }
-            else if (midiEvent.Type == MidiToKeyboard.Domain.MidiEventType.NoteOff)
+            else if (midiEvent.Type == MidiEventType.NoteOff)
             {
                 activityType = MidiInputActivityType.NoteOff;
             }

@@ -1,19 +1,24 @@
-using Melanchall.DryWetMidi.Core;
-using Melanchall.DryWetMidi.Multimedia;
-using MidiToKeyboard.Application;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Melanchall.DryWetMidi.Core;
+using Melanchall.DryWetMidi.Multimedia;
+using MidiToKeyboard.Application;
 using DomainMidiEvent = MidiToKeyboard.Domain.MidiEvent;
 
 namespace MidiToKeyboard.Infrastructure
 {
+    /// <summary>
+    /// DryWetMIDI を使用した MIDI 入力デバイスの操作
+    /// </summary>
     public sealed class DryWetMidiInput : IMidiInput, IDisposable
     {
         private InputDevice _inputDevice;
 
+        /// <inheritdoc />
         public event Action<DomainMidiEvent> MessageReceived;
 
+        /// <inheritdoc />
         public IReadOnlyList<MidiDeviceInfo> EnumerateDevices()
         {
             var devices = InputDevice.GetAll().ToList();
@@ -33,6 +38,7 @@ namespace MidiToKeyboard.Infrastructure
             }
         }
 
+        /// <inheritdoc />
         public void Start(string deviceId)
         {
             Stop();
@@ -53,6 +59,7 @@ namespace MidiToKeyboard.Infrastructure
             }
         }
 
+        /// <inheritdoc />
         public void Stop()
         {
             var inputDevice = _inputDevice;
@@ -74,6 +81,9 @@ namespace MidiToKeyboard.Infrastructure
             }
         }
 
+        /// <summary>
+        /// 使用中の MIDI 入力デバイスを解放
+        /// </summary>
         public void Dispose()
         {
             Stop();
