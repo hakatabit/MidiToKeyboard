@@ -103,7 +103,7 @@
   - SendInput / PInvoke をここに閉じ込める
   - SendInput 失敗時は `WarningOccurred` を発火し、Console へ直接出力しない
 - `JsonProfileRepository : IProfileRepository`
-  - mappings.json の読み込みをここに閉じ込める
+  - System.Text.Json による mappings.json の読み込みをここに閉じ込める
 - `NativeMethods`
   - SendInput などの Win32 API 宣言をここに閉じ込める
 

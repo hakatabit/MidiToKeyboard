@@ -22,8 +22,8 @@ WSL上でのビルドや実行確認は前提にしません。VirtualKey / Scan
 
 1. Visual Studioで`MidiToKeyboard.sln`を開く。
 2. NuGetパッケージが復元されていることを確認する。
-3. Debug / Any CPU構成でビルドする。
-4. Release / Any CPU構成でビルドする。
+3. Debug / Any CPU構成でクリーンビルドする。
+4. Release / Any CPU構成でクリーンビルドする。
 5. 対象フレームワークが.NET Framework 4.7.2であることを確認する。
 6. ビルドエラーと新しい警告がないことを確認する。
 7. `MidiToKeyboard.csproj`が旧形式csprojとして読み込めることを確認する。

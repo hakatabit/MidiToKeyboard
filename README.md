@@ -77,6 +77,7 @@ MIDIキーボードやパッドを使って、キーボード入力に対応し�
 - IDE: Visual Studio 2022
 - 対象フレームワーク: .NET Framework 4.7.2
 - プロジェクト形式: 旧形式csproj
+- JSON読み込み: System.Text.Json (NuGet)
 - MIDI入力: [Melanchall.DryWetMidi](https://github.com/melanchall/drywetmidi)
 - キー送出: Windows API `SendInput`
 
